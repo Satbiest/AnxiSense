@@ -60,15 +60,17 @@ for col in categorical_columns:
 
 user_input_df = pd.DataFrame([user_input])
 
-# Make prediction using the trained model
-prediction = xgb_classifier.predict(user_input_df)
-prediction_proba = xgb_classifier.predict_proba(user_input_df)
+# Add a button to trigger the prediction
+if st.button("Check your condition"):
+    # Make prediction using the trained model
+    prediction = xgb_classifier.predict(user_input_df)
+    prediction_proba = xgb_classifier.predict_proba(user_input_df)
 
-# Show the prediction result
-diagnosis_dict = {0: 'Normal', 1: 'Bipolar Type-1', 2: 'Bipolar Type-2', 3: 'Depression'}
-st.write(f"Predicted Diagnosis: {diagnosis_dict[prediction[0]]}")
+    # Show the prediction result
+    diagnosis_dict = {0: 'Normal', 1: 'Bipolar Type-1', 2: 'Bipolar Type-2', 3: 'Depression'}
+    st.write(f"Predicted Diagnosis: {diagnosis_dict[prediction[0]]}")
 
-# Display probability of each class
-st.write("Probability of each disorder:")
-for idx, disorder in diagnosis_dict.items():
-    st.write(f"{disorder}: {prediction_proba[0][idx]*100:.2f}%")
+    # Display probability of each class
+    st.write("Probability of each disorder:")
+    for idx, disorder in diagnosis_dict.items():
+        st.write(f"{disorder}: {prediction_proba[0][idx]*100:.2f}%")
