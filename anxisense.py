@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 
 # Load dataset
-mental = pd.read_csv (r"C:\Users\resia\Downloads\Dataset-Mental-Disorders.csv")
+mental = pd.read_csv('Dataset-Mental-Disorders.csv')
 
 
 # Preprocessing
