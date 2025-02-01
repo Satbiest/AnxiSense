@@ -8,7 +8,6 @@ from sklearn.preprocessing import LabelEncoder
 # Load dataset
 mental = pd.read_csv('Dataset-Mental-Disorders.csv')
 
-
 # Preprocessing
 yes_and_no_columns = ['Suicidal thoughts']
 for column in yes_and_no_columns:
@@ -39,7 +38,7 @@ xgb_classifier = XGBClassifier()
 xgb_classifier.fit(X_train, y_train)
 
 # Streamlit UI
-st.title("Anxiety Detection Model")
+st.title("AnxiSense: Check Your Tension, Know Your Emotion")
 st.write("This model detects the type of mental disorder based on input responses.")
 
 # Collect user input for prediction
