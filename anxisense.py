@@ -75,7 +75,13 @@ if st.sidebar.button("Check your condition"):
     prediction_proba = xgb_classifier.predict_proba(user_input_df)
 
     diagnosis_dict = {0: 'Normal', 1: 'Bipolar Type-1', 2: 'Bipolar Type-2', 3: 'Depression'}
-    st.write(f"### Predicted Diagnosis: **{diagnosis_dict[prediction[0]]}**")
+    predicted_diagnosis = diagnosis_dict[prediction[0]]
+
+    # Color the diagnosis based on the prediction
+    if predicted_diagnosis == 'Normal':
+        st.markdown(f"### Predicted Diagnosis: **<span style='color:green'>{predicted_diagnosis}</span>**", unsafe_allow_html=True)
+    else:
+        st.markdown(f"### Predicted Diagnosis: **<span style='color:red'>{predicted_diagnosis}</span>**", unsafe_allow_html=True)
 
     st.write("### Probability of each disorder:")
     for idx, disorder in diagnosis_dict.items():
