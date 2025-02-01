@@ -5,7 +5,7 @@ import joblib
 from xgboost import XGBClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
-import matplotlib.pyplot as plt
+
 
 # === Caching Dataset ===
 @st.cache_data
