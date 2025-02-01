@@ -5,7 +5,6 @@ import joblib
 from xgboost import XGBClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
-import matplotlib.pyplot as plt
 
 # === Caching Dataset ===
 @st.cache_data
@@ -87,26 +86,3 @@ if st.sidebar.button("Check your condition"):
     st.write("### Probability of each disorder:")
     for idx, disorder in diagnosis_dict.items():
         st.write(f"{disorder}: **{prediction_proba[0][idx]*100:.2f}%**")
-
-# === Feature Importance ===
-xgb_classifier.get_booster().feature_names = X.columns.tolist()  # Assign column names to the booster
-importance = xgb_classifier.feature_importances_
-
-# Sort the importance in descending order
-feature_importance_df = pd.DataFrame({
-    'Feature': X.columns,
-    'Importance': importance
-}).sort_values(by='Importance', ascending=False)
-
-# Show the top N important features
-top_n = 10  # Number of top features to display
-st.write(f"### Top {top_n} Most Important Features")
-st.write(feature_importance_df.head(top_n))
-
-# Plotting feature importance
-plt.figure(figsize=(10, 6))
-plt.barh(feature_importance_df['Feature'][:top_n], feature_importance_df['Importance'][:top_n], color='teal')
-plt.xlabel('Importance')
-plt.title('Top 10 Most Important Features')
-plt.gca().invert_yaxis()  # To display the most important feature on top
-st.pyplot(plt)
