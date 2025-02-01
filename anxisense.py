@@ -5,6 +5,7 @@ import joblib
 from xgboost import XGBClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
+import matplotlib.pyplot as plt
 
 # === Caching Dataset ===
 @st.cache_data
@@ -45,6 +46,15 @@ except FileNotFoundError:
     xgb_classifier.fit(X_train, y_train)
     joblib.dump(xgb_classifier, MODEL_PATH)
 
+# === Feature Importance ===
+feature_importance_df = pd.DataFrame({
+    'Feature': X.columns,
+    'Importance': xgb_classifier.feature_importances_
+}).sort_values(by='Importance', ascending=False)
+
+# Select top 10 most important features
+top_features = feature_importance_df['Feature'][:10].tolist()
+
 # === Streamlit UI ===
 st.title("AnxiSense: Check Your Tension, Know Your Emotion")
 st.write("This model detects the type of mental disorder based on input responses.")
@@ -53,7 +63,7 @@ st.write("This model detects the type of mental disorder based on input response
 st.sidebar.header("User Input")
 user_input = {}
 
-for column in X.columns:
+for column in top_features:
     if column in categorical_columns:
         options = label_encoders[column].classes_
         user_input[column] = st.sidebar.selectbox(f"{column}", options)
@@ -65,7 +75,8 @@ for column in X.columns:
 
 # Convert user input to DataFrame
 for col in categorical_columns:
-    user_input[col] = label_encoders[col].transform([user_input[col]])[0]
+    if col in top_features:
+        user_input[col] = label_encoders[col].transform([user_input[col]])[0]
 
 user_input_df = pd.DataFrame([user_input])
 
