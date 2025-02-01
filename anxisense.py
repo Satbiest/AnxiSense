@@ -1,20 +1,23 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import joblib
 from xgboost import XGBClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 
-# Load dataset
-mental = pd.read_csv('Dataset-Mental-Disorders.csv')
+# === Caching Dataset ===
+@st.cache_data
+def load_data():
+    return pd.read_csv('Dataset-Mental-Disorders.csv')
 
-# Preprocessing
-yes_and_no_columns = ['Suicidal thoughts']
-for column in yes_and_no_columns:
-    mental[column] = mental[column].str.strip().str.upper().fillna("NO")
-    mental[column] = mental[column].map({'YES': 1, 'NO': 0})
+mental = load_data()
 
-# Map expert diagnosis to integer values
+# === Preprocessing ===
+# Convert Yes/No columns
+mental['Suicidal thoughts'] = mental['Suicidal thoughts'].str.strip().str.upper().fillna("NO").replace({'YES': 1, 'NO': 0})
+
+# Map expert diagnosis
 mapping_dict = {'Normal': 0, 'Bipolar Type-1': 1, 'Bipolar Type-2': 2, 'Depression': 3}
 mental['Expert Diagnose'] = mental['Expert Diagnose'].map(mapping_dict).astype(int)
 
@@ -24,52 +27,56 @@ y = mental['Expert Diagnose']
 
 # Convert categorical columns to numerical
 categorical_columns = X.select_dtypes(include=['object']).columns
-label_encoders = {}
-for col in categorical_columns:
-    le = LabelEncoder()
-    X[col] = le.fit_transform(X[col])
-    label_encoders[col] = le  # Store encoders for later use
+label_encoders = {col: LabelEncoder().fit(X[col]) for col in categorical_columns}
 
-# Split the data
+for col in categorical_columns:
+    X[col] = label_encoders[col].transform(X[col])
+
+# === Split Data ===
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 
-# Train the model
-xgb_classifier = XGBClassifier()
-xgb_classifier.fit(X_train, y_train)
+# === Load or Train Model ===
+MODEL_PATH = "xgb_model.pkl"
 
-# Streamlit UI
+try:
+    xgb_classifier = joblib.load(MODEL_PATH)
+except FileNotFoundError:
+    xgb_classifier = XGBClassifier()
+    xgb_classifier.fit(X_train, y_train)
+    joblib.dump(xgb_classifier, MODEL_PATH)
+
+# === Streamlit UI ===
 st.title("AnxiSense: Check Your Tension, Know Your Emotion")
 st.write("This model detects the type of mental disorder based on input responses.")
 
-# Collect user input for prediction
+# Sidebar for user input
+st.sidebar.header("User Input")
 user_input = {}
+
 for column in X.columns:
     if column in categorical_columns:
         options = label_encoders[column].classes_
-        user_input[column] = st.selectbox(f"Select {column}", options)
+        user_input[column] = st.sidebar.selectbox(f"{column}", options)
     elif column == 'Suicidal thoughts':
-        user_input[column] = st.selectbox("Select Suicidal thoughts", ['No', 'Yes'])
+        user_input[column] = st.sidebar.selectbox("Suicidal thoughts", ['No', 'Yes'])
         user_input[column] = 1 if user_input[column] == 'Yes' else 0
     else:
-        user_input[column] = st.slider(f"Select value for {column}", int(X[column].min()), int(X[column].max()))
+        user_input[column] = st.sidebar.slider(f"{column}", int(X[column].min()), int(X[column].max()))
 
-# Convert user input to the model input format
+# Convert user input to DataFrame
 for col in categorical_columns:
     user_input[col] = label_encoders[col].transform([user_input[col]])[0]
 
 user_input_df = pd.DataFrame([user_input])
 
-# Add a button to trigger the prediction
-if st.button("Check your condition"):
-    # Make prediction using the trained model
+# === Prediction Button ===
+if st.sidebar.button("Check your condition"):
     prediction = xgb_classifier.predict(user_input_df)
     prediction_proba = xgb_classifier.predict_proba(user_input_df)
 
-    # Show the prediction result
     diagnosis_dict = {0: 'Normal', 1: 'Bipolar Type-1', 2: 'Bipolar Type-2', 3: 'Depression'}
-    st.write(f"Predicted Diagnosis: {diagnosis_dict[prediction[0]]}")
+    st.write(f"### Predicted Diagnosis: **{diagnosis_dict[prediction[0]]}**")
 
-    # Display probability of each class
-    st.write("Probability of each disorder:")
+    st.write("### Probability of each disorder:")
     for idx, disorder in diagnosis_dict.items():
-        st.write(f"{disorder}: {prediction_proba[0][idx]*100:.2f}%")
+        st.write(f"{disorder}: **{prediction_proba[0][idx]*100:.2f}%**")
